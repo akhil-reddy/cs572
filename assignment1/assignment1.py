@@ -1,19 +1,30 @@
-import csv
-import json
-import requests
-from bs4 import BeautifulSoup
 import time
 import random
 import logging
 from urllib.parse import urlparse, unquote
+import requests
+from bs4 import BeautifulSoup
+import json
+import csv
 
 logging.basicConfig(level=logging.DEBUG)
 
+def normalize_url(url):
+    if not url:
+        return ""
+    parsed = urlparse(url)
+    netloc = parsed.netloc
+    if netloc.startswith('www.'):
+        netloc = netloc[4:]
+    path = parsed.path.rstrip('/')
+    normalized = f"{netloc}{path}"
+    if parsed.query:
+        normalized += f"?{parsed.query}"
+    return normalized
 
 class SearchEngine:
-    def __init__(self, base_url, selectors):
+    def __init__(self, base_url):
         self.base_url = base_url
-        self.selectors = selectors
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -23,11 +34,6 @@ class SearchEngine:
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0',
         })
 
     def search(self, query):
@@ -54,31 +60,35 @@ class SearchEngine:
         soup = BeautifulSoup(content, "html.parser")
 
         results = []
-        for selector in self.selectors:
+        selectors = [
+            "div.result__body a.result__a",
+            "div.results a.result__a",
+            "div.links_main a.result__a",
+            "div.results_links a.large",
+            "article.result h2 a",
+            "div.result__title a"
+        ]
+
+        for selector in selectors:
             raw_results = soup.select(selector)
             logging.info(f"Found {len(raw_results)} raw results with selector '{selector}'")
 
-            if raw_results:
-                for result in raw_results:
-                    link = result.get('href')
-                    if link:
-                        # DuckDuckGo uses a redirect URL, so we need to extract the actual URL
-                        parsed = urlparse(link)
-                        if parsed.netloc == 'duckduckgo.com' and parsed.path == '/l/':
-                            actual_url = parsed.query.split('uddg=')[-1].split('&')[0]
-                            link = unquote(actual_url)
+            for result in raw_results:
+                link = result.get('href')
+                if link:
+                    if link.startswith('/'):
+                        link = 'https://duckduckgo.com' + link
+                    parsed = urlparse(link)
+                    if parsed.netloc == 'duckduckgo.com' and parsed.path == '/l/':
+                        actual_url = parsed.query.split('uddg=')[-1].split('&')[0]
+                        link = unquote(actual_url)
 
-                    logging.debug(f"Processed link: {link}")
-                    if link and link.startswith('http'):
-                        parsed_url = urlparse(link)
-                        normalized_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path.rstrip('/')}"
-                        if normalized_url not in results:
-                            results.append(normalized_url)
-                            if len(results) == 10:
-                                break
-
-                if results:
-                    break  # Stop if we found results with this selector
+                normalized_url = normalize_url(link)
+                logging.debug(f"Processed link: {normalized_url}")
+                if normalized_url and normalized_url not in results:
+                    results.append(normalized_url)
+                    if len(results) == 10:
+                        return results
 
         if not results:
             logging.warning(f"No results found with any selector. Dumping full HTML to 'debug_output.html'")
@@ -88,30 +98,29 @@ class SearchEngine:
         logging.info(f"Processed {len(results)} unique results")
         return results
 
-
 def load_queries(file_path):
     with open(file_path, 'r') as f:
         return [line.strip() for line in f]
-
 
 def load_google_results(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
 
-
 def calculate_overlap_and_spearman(engine_results, google_results):
-    overlap = set(engine_results) & set(google_results)
-    overlap_percent = len(overlap) / len(google_results) * 100
+    engine_normalized = [normalize_url(url) for url in engine_results]
+    google_normalized = [normalize_url(url) for url in google_results]
+
+    overlap = set(engine_normalized) & set(google_normalized)
+    overlap_percent = len(overlap) / len(google_normalized) * 100
 
     if len(overlap) == 0:
         return overlap_percent, 0
     elif len(overlap) == 1:
-        return overlap_percent, 1 if engine_results.index(list(overlap)[0]) == google_results.index(
-            list(overlap)[0]) else 0
+        return overlap_percent, 1 if engine_normalized.index(list(overlap)[0]) == google_normalized.index(list(overlap)[0]) else 0
 
     ranks = []
     for url in overlap:
-        ranks.append((engine_results.index(url), google_results.index(url)))
+        ranks.append((engine_normalized.index(url), google_normalized.index(url)))
 
     n = len(ranks)
     sum_d_squared = sum((r[0] - r[1]) ** 2 for r in ranks)
@@ -119,17 +128,8 @@ def calculate_overlap_and_spearman(engine_results, google_results):
 
     return overlap_percent, rho
 
-
 def main():
-    engine = SearchEngine(
-        "https://html.duckduckgo.com/html/?q=",
-        [
-            "div.result__body a.result__a",
-            "div.results a.result__a",
-            "div.links_main a.result__a",
-            "div.results_links a.large",
-        ]
-    )
+    engine = SearchEngine("https://html.duckduckgo.com/html/?q=")
 
     queries = load_queries("100QueriesSet4.txt")  # Update with your assigned query set
     google_results = load_google_results("Google_Result4.json")  # Update with your assigned Google results file
@@ -162,7 +162,6 @@ def main():
         writer.writerow(["Average", avg_overlap, avg_rho])
 
     logging.info("Results saved to hw1.json and hw1.csv")
-
 
 if __name__ == "__main__":
     main()
