@@ -106,6 +106,7 @@ def load_google_results(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
 
+
 def calculate_overlap_and_spearman(engine_results, google_results):
     engine_normalized = [normalize_url(url) for url in engine_results]
     google_normalized = [normalize_url(url) for url in google_results]
@@ -116,14 +117,18 @@ def calculate_overlap_and_spearman(engine_results, google_results):
     if len(overlap) == 0:
         return overlap_percent, 0
     elif len(overlap) == 1:
-        return overlap_percent, 1 if engine_normalized.index(list(overlap)[0]) == google_normalized.index(list(overlap)[0]) else 0
+        overlapping_url = list(overlap)[0]
+        engine_rank = engine_normalized.index(overlapping_url)
+        google_rank = google_normalized.index(overlapping_url)
+        return overlap_percent, 1 if engine_rank == google_rank else -1
 
-    ranks = []
-    for url in overlap:
-        ranks.append((engine_normalized.index(url), google_normalized.index(url)))
+    ranks_engine = {url: engine_normalized.index(url) for url in overlap}
+    ranks_google = {url: google_normalized.index(url) for url in overlap}
 
-    n = len(ranks)
-    sum_d_squared = sum((r[0] - r[1]) ** 2 for r in ranks)
+    n = len(overlap)
+    rank_diffs = [(ranks_engine[url] - ranks_google[url]) ** 2 for url in overlap]
+    sum_d_squared = sum(rank_diffs)
+
     rho = 1 - (6 * sum_d_squared) / (n * (n ** 2 - 1))
 
     return overlap_percent, rho
