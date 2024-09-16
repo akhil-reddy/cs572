@@ -1,36 +1,91 @@
+import csv
+import json
 import requests
 from bs4 import BeautifulSoup
-import json
 import time
 import random
-import csv
-from urllib.parse import urlparse
+import logging
+from urllib.parse import urlparse, unquote
 
-USER_AGENT = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15'
-}
+logging.basicConfig(level=logging.DEBUG)
+
 
 class SearchEngine:
-    def __init__(self, base_url, selector):
+    def __init__(self, base_url, selectors):
         self.base_url = base_url
-        self.selector = selector
+        self.selectors = selectors
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
+        })
 
     def search(self, query):
-        time.sleep(random.uniform(10, 100))
+        delay = random.uniform(10, 20)
+        logging.info(f"Sleeping for {delay:.2f} seconds before searching for '{query}'")
+        time.sleep(delay)
+
         url = self.base_url + '+'.join(query.split())
-        response = requests.get(url, headers=USER_AGENT)
-        soup = BeautifulSoup(response.text, "html.parser")
-        raw_results = soup.select(self.selector)
+        logging.info(f"Sending request to {url}")
+
+        try:
+            response = self.session.get(url, timeout=30)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            logging.error(f"Error fetching search results: {e}")
+            return []
+
+        logging.debug(f"Response status code: {response.status_code}")
+        logging.debug(f"Response headers: {response.headers}")
+
+        content = response.text
+        logging.debug(f"Decoded content (first 1000 characters): {content[:1000]}")
+
+        soup = BeautifulSoup(content, "html.parser")
+
         results = []
-        for result in raw_results:
-            link = result.get('href')
-            if link and link.startswith('http'):
-                parsed_url = urlparse(link)
-                normalized_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path.rstrip('/')}"
-                if normalized_url not in results:
-                    results.append(normalized_url)
-                    if len(results) == 10:
-                        break
+        for selector in self.selectors:
+            raw_results = soup.select(selector)
+            logging.info(f"Found {len(raw_results)} raw results with selector '{selector}'")
+
+            if raw_results:
+                for result in raw_results:
+                    link = result.get('href')
+                    if link:
+                        # DuckDuckGo uses a redirect URL, so we need to extract the actual URL
+                        parsed = urlparse(link)
+                        if parsed.netloc == 'duckduckgo.com' and parsed.path == '/l/':
+                            actual_url = parsed.query.split('uddg=')[-1].split('&')[0]
+                            link = unquote(actual_url)
+
+                    logging.debug(f"Processed link: {link}")
+                    if link and link.startswith('http'):
+                        parsed_url = urlparse(link)
+                        normalized_url = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path.rstrip('/')}"
+                        if normalized_url not in results:
+                            results.append(normalized_url)
+                            if len(results) == 10:
+                                break
+
+                if results:
+                    break  # Stop if we found results with this selector
+
+        if not results:
+            logging.warning(f"No results found with any selector. Dumping full HTML to 'debug_output.html'")
+            with open('debug_output.html', 'w', encoding='utf-8') as f:
+                f.write(content)
+
+        logging.info(f"Processed {len(results)} unique results")
         return results
 
 
@@ -66,17 +121,24 @@ def calculate_overlap_and_spearman(engine_results, google_results):
 
 
 def main():
-    # Initialize the search engine (change these values based on your assigned search engine)
-    engine = SearchEngine("https://www.bing.com/search?q=", "li.b_algo a[h2]")
+    engine = SearchEngine(
+        "https://html.duckduckgo.com/html/?q=",
+        [
+            "div.result__body a.result__a",
+            "div.results a.result__a",
+            "div.links_main a.result__a",
+            "div.results_links a.large",
+        ]
+    )
 
-    queries = load_queries("100QueriesSet4.txt")
-    google_results = load_google_results("Google_Result4.json")
+    queries = load_queries("100QueriesSet4.txt")  # Update with your assigned query set
+    google_results = load_google_results("Google_Result4.json")  # Update with your assigned Google results file
 
     results = {}
     stats = []
 
     for query in queries:
-        print(f"Processing query: {query}")
+        logging.info(f"Processing query: {query}")
         engine_results = engine.search(query)
         results[query] = engine_results
 
@@ -99,7 +161,7 @@ def main():
         avg_rho = sum(s[2] for s in stats) / len(stats)
         writer.writerow(["Average", avg_overlap, avg_rho])
 
-    print("Results saved to hw1.json and hw1.csv")
+    logging.info("Results saved to hw1.json and hw1.csv")
 
 
 if __name__ == "__main__":
