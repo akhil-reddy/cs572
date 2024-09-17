@@ -37,7 +37,7 @@ class SearchEngine:
         })
 
     def search(self, query):
-        delay = random.uniform(10, 20)
+        delay = random.uniform(10, 40)
         logging.info(f"Sleeping for {delay:.2f} seconds before searching for '{query}'")
         time.sleep(delay)
 
@@ -148,7 +148,7 @@ def main():
         results[query] = engine_results
 
         overlap_percent, rho = calculate_overlap_and_spearman(engine_results, google_results[query])
-        stats.append((query, overlap_percent, rho))
+        stats.append((query, int(overlap_percent/10), overlap_percent, rho))
 
     # Save results to JSON file
     with open("hw1.json", "w") as f:
@@ -157,14 +157,14 @@ def main():
     # Save statistics to CSV file
     with open("hw1.csv", "w", newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(["Query", "Percent Overlap", "Spearman Coefficient"])
+        writer.writerow(["Query", "Number of Overlapping Results", "Percent Overlap", "Spearman Coefficient"])
         for stat in stats:
             writer.writerow(stat)
 
         # Calculate and write averages
-        avg_overlap = sum(s[1] for s in stats) / len(stats)
-        avg_rho = sum(s[2] for s in stats) / len(stats)
-        writer.writerow(["Average", avg_overlap, avg_rho])
+        avg_overlap = sum(s[2] for s in stats) / len(stats)
+        avg_rho = sum(s[3] for s in stats) / len(stats)
+        writer.writerow(["Averages", avg_overlap/10, avg_overlap, avg_rho])
 
     logging.info("Results saved to hw1.json and hw1.csv")
 
