@@ -2,4 +2,4 @@ Based on the analysis of 100 queries, DuckDuckGo's search results show a low deg
 
 This makes logical sense as DuckDuckGo is a comparatively new search engine and will have a different (combined) indexing of the internet. Since DuckDuckGo would've scraped a smaller portion of the web, the overlap will be low. Another inference to draw is that DuckDuckGo is built with the user's privacy in mind, so it won't have all the tracking and personalization that Google does, which may explain the negative Spearman coefficient.
 
-There are 3 queries without any results in the JSON file. Even when I tried to run the scraper with different sleep / delays, I missed those results. Additionally, the missing results are from different queries each time, while the logs say that the connection has timed out.   
+There are 3 queries without any results in the JSON file. Even when I tried to run the scraper with different sleep / delays, I missed those results. Additionally, the missing results are from different queries each time, while the logs say that the connection has timed out.
