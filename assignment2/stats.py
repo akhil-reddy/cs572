@@ -10,11 +10,11 @@ def get_domain(url):
     return urlparse(url).netloc
 
 def process_fetch_csv(fetch_data):
-    attempted = len(fetch_data)
-    succeeded = sum(1 for row in fetch_data if row[1].startswith('2'))
+    attempted = len(fetch_data) - 1  # Subtract 1 to account for header
+    succeeded = sum(1 for row in fetch_data[1:] if row[1].startswith('2'))
     failed_or_aborted = attempted - succeeded
     status_codes = defaultdict(int)
-    for row in fetch_data:
+    for row in fetch_data[1:]:  # Skip header row
         status_codes[row[1]] += 1
     return attempted, succeeded, failed_or_aborted, status_codes
 
@@ -22,7 +22,7 @@ def process_visit_csv(visit_data):
     file_sizes = defaultdict(int)
     content_types = defaultdict(int)
     total_urls = 0
-    for row in visit_data:
+    for row in visit_data[1:]:  # Skip header row
         size = int(row[1])
         total_urls += int(row[2])
         content_types[row[3]] += 1
@@ -42,7 +42,7 @@ def process_urls_csv(urls_data, news_site):
     unique_urls = set()
     unique_within = set()
     unique_outside = set()
-    for row in urls_data:
+    for row in urls_data[1:]:  # Skip header row
         url = row[0]
         unique_urls.add(url)
         if news_site in get_domain(url):
