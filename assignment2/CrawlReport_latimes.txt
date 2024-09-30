@@ -5,33 +5,33 @@ Number of threads: 4
 
 Fetch Statistics
 ================
-# fetches attempted: 20000
+# fetches attempted: 20002
 # fetches succeeded: 19954
-# fetches failed or aborted: 46
+# fetches failed or aborted: 48
 
 Outgoing URLs:
 ==============
-Total URLs extracted: 3693478
-# unique URLs extracted: 241045
-# unique URLs within News Site: 72224
-# unique URLs outside News Site: 168821
+Total URLs extracted: 3692754
+# unique URLs extracted: 240921
+# unique URLs within News Site: 72102
+# unique URLs outside News Site: 168819
 
 Status Codes:
 =============
 200: 19954
 403: 8
-404: 26
+404: 22
 405: 2
 429: 5
 999: 2
-FAILED: 3
+FAILED: 9
 
 File Sizes:
 ===========
 >= 1MB: 517
-100KB ~ <1MB: 18807
+100KB ~ <1MB: 18808
 1KB ~ <10KB: 8
-10KB ~ <100KB: 622
+10KB ~ <100KB: 621
 
 Content Types:
 ==============
