@@ -1,32 +1,38 @@
-Name: [Your Name]
-USC ID: [Your USC ID]
+Name: Akhil Krishna Reddy
+USC ID: 7423463185
 News site crawled: latimes
 Number of threads: 4
 
 Fetch Statistics
 ================
-# fetches attempted: 388
-# fetches succeeded: 388
-# fetches failed or aborted: 0
+# fetches attempted: 20000
+# fetches succeeded: 19954
+# fetches failed or aborted: 46
 
 Outgoing URLs:
 ==============
-Total URLs extracted: 66834
-# unique URLs extracted: 8584
-# unique URLs within News Site: 5363
-# unique URLs outside News Site: 3221
+Total URLs extracted: 3693478
+# unique URLs extracted: 241045
+# unique URLs within News Site: 72224
+# unique URLs outside News Site: 168821
 
 Status Codes:
 =============
-200: 388
+200: 19954
+403: 8
+404: 26
+405: 2
+429: 5
+999: 2
+FAILED: 3
 
 File Sizes:
 ===========
->= 1MB: 3
-100KB ~ <1MB: 369
-1KB ~ <10KB: 1
-10KB ~ <100KB: 15
+>= 1MB: 517
+100KB ~ <1MB: 18807
+1KB ~ <10KB: 8
+10KB ~ <100KB: 622
 
 Content Types:
 ==============
-text/html: 388
+text/html: 19954

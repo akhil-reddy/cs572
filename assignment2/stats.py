@@ -52,8 +52,8 @@ def process_urls_csv(urls_data, news_site):
     return len(unique_urls), len(unique_within), len(unique_outside)
 
 def generate_report(news_site, num_threads, fetch_stats, visit_stats, urls_stats):
-    report = f"""Name: [Your Name]
-USC ID: [Your USC ID]
+    report = f"""Name: Akhil Krishna Reddy
+USC ID: 7423463185
 News site crawled: {news_site}
 Number of threads: {num_threads}
 

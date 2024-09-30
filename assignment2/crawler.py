@@ -1,3 +1,5 @@
+import re
+
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -38,7 +40,27 @@ class Crawler:
 
     def is_valid(self, url):
         parsed = urlparse(url)
-        return bool(parsed.netloc) and parsed.netloc.endswith(self.domain)
+
+        # Check if the URL is within the domain
+        if not (bool(parsed.netloc) and parsed.netloc.endswith(self.domain)):
+            return False
+
+        # Filter out telephone number URLs
+        if re.search(r'/tel:', parsed.path):
+            return False
+
+        # Filter out specified file types
+        excluded_extensions = (
+            'css', 'js', 'mid', 'mp2', 'mp3', 'mp4', 'wav', 'avi', 'mov', 'mpeg', 'ram',
+            'm4v', 'rm', 'smil', 'wmv', 'swf', 'wma', 'zip', 'rar', 'gz', 'json', 'ttf',
+            'svg', 'ico', 'jpg', 'jpeg', 'png', 'gif', 'pdf', 'xml'
+        )
+        if parsed.path.lower().split('.')[-1] in excluded_extensions:
+            return False
+
+        return True
+
+        return True
 
     def crawl(self):
         print(f"Starting crawl from {self.seed_url}")
@@ -65,7 +87,7 @@ class Crawler:
                 print("---")
 
             # Politeness delay
-            time.sleep(random.uniform(1, 3))
+            #time.sleep(random.uniform(1, 3))
 
     def fetch_url(self, url, depth):
         self.pages_crawled += 1
@@ -127,7 +149,6 @@ if __name__ == "__main__":
 
     # For macOS: This is a workaround for the SSL certificate issue
     import ssl
-
     ssl._create_default_https_context = ssl._create_unverified_context
 
     crawler = Crawler("https://www.latimes.com/", max_pages=20000, max_depth=16)
