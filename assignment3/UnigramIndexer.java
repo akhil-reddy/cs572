@@ -16,21 +16,20 @@ public class UnigramIndexer {
 
     public static class TokenizerMapper extends Mapper<Object, Text, Text, Text> {
         private Text word = new Text();
-        private Text docId = new Text();
-        private long mapInputRecords = 0;
+        private Text doc_id = new Text();
 
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             try {
-                FileSplit fileSplit = (FileSplit)context.getInputSplit();
-                String filename = fileSplit.getPath().getName();
+                FileSplit file_split = (FileSplit)context.getInputSplit();
+                String filename = file_split.getPath().getName();
                 String line = value.toString().toLowerCase();
                 line = line.replaceAll("[^a-zA-Z\\s]", " ");
-                StringTokenizer itr = new StringTokenizer(line);
-                while (itr.hasMoreTokens()) {
-                    word.set(itr.nextToken());
-                    docId.set(filename + ":1");
-                    context.write(word, docId);
-                    mapInputRecords++;
+
+                StringTokenizer iter = new StringTokenizer(line);
+                while (iter.hasMoreTokens()) {
+                    word.set(iter.nextToken());
+                    doc_id.set(filename + ":1");
+                    context.write(word, doc_id);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -40,17 +39,17 @@ public class UnigramIndexer {
 
     public static class IndexReducer extends Reducer<Text, Text, Text, Text> {
         private Text result = new Text();
-        private long reduceInputRecords = 0;
+        private long reduce_rec = 0;
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             try {
                 Map<String, Integer> counts = new HashMap<>();
                 for (Text val : values) {
                     String[] parts = val.toString().split(":");
-                    String docId = parts[0];
+                    String doc_id = parts[0];
                     int count = Integer.parseInt(parts[1]);
-                    counts.put(docId, counts.getOrDefault(docId, 0) + count);
-                    reduceInputRecords++;
+                    counts.put(doc_id, counts.getOrDefault(doc_id, 0) + count);
+                    reduce_rec ++;
                 }
                 StringBuilder sb = new StringBuilder();
                 for (Map.Entry<String, Integer> entry : counts.entrySet()) {
@@ -65,7 +64,7 @@ public class UnigramIndexer {
 
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
-            System.out.println("Reducer has processed records: " + reduceInputRecords);
+            System.out.println("Reducer has processed records: " + reduce_rec);
         }
     }
 

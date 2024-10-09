@@ -14,27 +14,26 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class BigramIndexer {
     public static class TokenizerMapper extends Mapper<Object, Text, Text, Text> {
         private Text bigram = new Text();
-        private Text docId = new Text();
-        private Set<String> selectedBigrams = new HashSet<>(Arrays.asList(
+        private Text doc_id = new Text();
+        private Set<String> target = new HashSet<>(Arrays.asList(
                 "computer science", "information retrieval", "power politics",
                 "los angeles", "bruce willis"));
 
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             try {
-                FileSplit fileSplit = (FileSplit) context.getInputSplit();
-                String filename = fileSplit.getPath().getName();
+                FileSplit file_split = (FileSplit) context.getInputSplit();
+                String filename = file_split.getPath().getName();
                 String line = value.toString().toLowerCase();
                 line = line.replaceAll("[^a-zA-Z\\s]", " ");
 
-                String[] words = line.split("\\s+", 1000);
+                String[] words = line.split("\\s+");
+
                 for (int i = 0; i < words.length - 1; i++) {
-                    String bigramStr = words[i] + " " + words[i + 1];
-                    if (selectedBigrams.contains(bigramStr)) {
-                        System.out.println("Has bigram: " + bigramStr);  // Debug statement
-                        bigram.set(bigramStr);
-                        docId.set(filename + ":1");
-                        context.write(bigram, docId);
-                        System.out.println("Emitting: " + bigram + " -> " + docId);
+                    String bigram_str = words[i] + " " + words[i + 1];
+                    if (target.contains(bigram_str)) {
+                        bigram.set(bigram_str);
+                        doc_id.set(filename + ":1");
+                        context.write(bigram, doc_id);
                     }
                 }
             } catch (Exception e) {
@@ -50,9 +49,9 @@ public class BigramIndexer {
             Map<String, Integer> counts = new HashMap<>();
             for (Text val : values) {
                 String[] parts = val.toString().split(":");
-                String docId = parts[0];
+                String doc_id = parts[0];
                 int count = Integer.parseInt(parts[1]);
-                counts.put(docId, counts.getOrDefault(docId, 0) + count);
+                counts.put(doc_id, counts.getOrDefault(doc_id, 0) + count);
             }
 
             StringBuilder sb = new StringBuilder();
@@ -70,12 +69,12 @@ public class BigramIndexer {
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             Map<String, Integer> counts = new HashMap<>();
             for (Text val : values) {
-                String[] docCounts = val.toString().split(" ");
-                for (String docCount : docCounts) {
-                    String[] parts = docCount.split(":");
-                    String docId = parts[0];
+                String[] doc_counts = val.toString().split(" ");
+                for (String doc_count : doc_counts) {
+                    String[] parts = doc_count.split(":");
+                    String doc_id = parts[0];
                     int count = Integer.parseInt(parts[1]);
-                    counts.put(docId, counts.getOrDefault(docId, 0) + count);
+                    counts.put(doc_id, counts.getOrDefault(doc_id, 0) + count);
                 }
             }
 
