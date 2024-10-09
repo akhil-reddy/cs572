@@ -1,0 +1,18 @@
+# Running MapReduce Jobs on Repl.it
+
+1. Start with the provided example: https://replit.com/@satychary/HadoopWordCounter
+
+2. Fork this repl to your own account.
+
+3. Replace the existing Java code with the Python code for either the unigram or bigram indexer.
+
+4. Modify the `run` command in the `.replit` file to use Python instead of Java. For example:
+   ```
+   run = "python3 unigram_indexer.py mapper < input/file1.txt | sort | python3 unigram_indexer.py reducer > output/unigram_index.txt"
+   ```
+
+5. Place your input files in the `input` directory.
+
+6. Run the repl, and the output will be generated in the `output` directory.
+
+Note: The repl.it environment is pre-configured with the necessary Hadoop libraries, so you don't need to set up Hadoop separately.
