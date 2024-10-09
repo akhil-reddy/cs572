@@ -19,11 +19,6 @@ public class UnigramIndexer {
         private Text docId = new Text();
         private long mapInputRecords = 0;
 
-        @Override
-        protected void setup(Context context) {
-            System.out.println("Mapper setup complete");
-        }
-
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             try {
                 FileSplit fileSplit = (FileSplit)context.getInputSplit();
@@ -38,25 +33,14 @@ public class UnigramIndexer {
                     mapInputRecords++;
                 }
             } catch (Exception e) {
-                System.err.println("Error in mapper: " + e.getMessage());
                 e.printStackTrace();
             }
-        }
-
-        @Override
-        protected void cleanup(Context context) throws IOException, InterruptedException {
-            System.out.println("Mapper processed " + mapInputRecords + " records");
         }
     }
 
     public static class IndexReducer extends Reducer<Text, Text, Text, Text> {
         private Text result = new Text();
         private long reduceInputRecords = 0;
-
-        @Override
-        protected void setup(Context context) {
-            System.out.println("Reducer setup complete");
-        }
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             try {
@@ -74,16 +58,14 @@ public class UnigramIndexer {
                 }
                 result.set(sb.toString().trim());
                 context.write(key, result);
-                System.out.println("Reducer output: " + key + " -> " + result);
             } catch (Exception e) {
-                System.err.println("Error in reducer: " + e.getMessage());
                 e.printStackTrace();
             }
         }
 
         @Override
         protected void cleanup(Context context) throws IOException, InterruptedException {
-            System.out.println("Reducer processed " + reduceInputRecords + " records");
+            System.out.println("Reducer has processed records: " + reduceInputRecords);
         }
     }
 
@@ -100,12 +82,8 @@ public class UnigramIndexer {
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
-        System.out.println("Starting Unigram Indexer job...");
-        System.out.println("Input path: " + args[0]);
-        System.out.println("Output path: " + args[1]);
-
         boolean result = job.waitForCompletion(true);
-        System.out.println("Unigram Indexer job completed. Result: " + result);
+        System.out.println("Unigram Indexer job completed. Status: " + result);
 
         System.exit(result ? 0 : 1);
     }

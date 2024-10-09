@@ -38,7 +38,6 @@ public class BigramIndexer {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Error in mapper: " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -99,15 +98,11 @@ public class BigramIndexer {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
 
-        System.out.println("Starting Bigram Indexer job...");
-        System.out.println("Input path: " + args[0]);
-        System.out.println("Output path: " + args[1]);
-
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
         boolean result = job.waitForCompletion(true);
-        System.out.println("Bigram Indexer job completed. Result: " + result);
+        System.out.println("Bigram Indexer job completed. Status: " + result);
 
         System.exit(result ? 0 : 1);
     }
