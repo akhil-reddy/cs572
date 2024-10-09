@@ -1,19 +1,18 @@
-compile = "javac -classpath .:./lib/hadoop-core-1.2.1.jar:./lib/commons-logging-1.2.jar:./lib/commons-configuration2-2.8.0.jar:target/dependency/* -d . $(find . -type f -name '*.java')"
+compile = "javac -classpath .:./lib/hadoop-core-1.2.1.jar:./lib/commons-logging-1.2.jar:./lib/commons-configuration2-2.8.0.jar:./lib/commons-httpclient-3.1.jar:target/dependency/* -d . $(find . -type f -name '*.java')"
 run = """
-rm -rf out* subset_input
-mkdir -p subset_input/fulldata subset_input/devdata
-head -n 1000 in/fulldata/* > subset_input/fulldata/sample.txt
-head -n 1000 in/devdata/* > subset_input/devdata/sample.txt
+rm -rf out*
 echo "Running Unigram Indexer..."
-java -Xmx512m -classpath .:./lib/*:target/dependency/* UnigramIndexer subset_input/fulldata out/unigram
+java -Xmx2048m -Dhadoop.root.logger=DEBUG,console -classpath .:./lib/*:target/dependency/* UnigramIndexer in/fulldata out/unigram
 echo "Unigram Indexer completed. Output:"
 ls -l out/unigram/
-cat out/unigram/part* || echo "No output generated for Unigram Indexer"
+mv out/unigram/part-r-00000 out/unigram_index.txt
+echo "Unigram index file created."
 echo "\nRunning Bigram Indexer..."
-java -Xmx512m -classpath .:./lib/*:target/dependency/* BigramIndexer subset_input/devdata out/bigram
+java -Xmx2048m -Dhadoop.root.logger=DEBUG,console -classpath .:./lib/*:target/dependency/* BigramIndexer in/devdata out/bigram
 echo "Bigram Indexer completed. Output:"
 ls -l out/bigram/
-cat out/bigram/part* || echo "No output generated for Bigram Indexer"
+mv out/bigram/part-r-00000 out/bigram_index.txt
+echo "Bigram index file created."
 """
 entrypoint = "UnigramIndexer.java"
 hidden = ["**/*.class"]
