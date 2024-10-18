@@ -54,11 +54,11 @@ public class BigramIndexer {
                 counts.put(doc_id, counts.getOrDefault(doc_id, 0) + count);
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sbdr = new StringBuilder();
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                sb.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
+                sbdr.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
             }
-            result.set(sb.toString().trim());
+            result.set(sbdr.toString().trim());
             context.write(key, result);
         }
     }
@@ -78,11 +78,11 @@ public class BigramIndexer {
                 }
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sbdr = new StringBuilder();
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                sb.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
+                sbdr.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
             }
-            result.set(sb.toString().trim());
+            result.set(sbdr.toString().trim());
             context.write(key, result);
         }
     }
@@ -101,7 +101,7 @@ public class BigramIndexer {
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
         boolean result = job.waitForCompletion(true);
-        System.out.println("Bigram Indexer job completed. Status: " + result);
+        System.out.println("Bigram Indexer status: " + result);
 
         System.exit(result ? 0 : 1);
     }

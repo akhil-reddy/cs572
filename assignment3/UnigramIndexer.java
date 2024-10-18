@@ -15,7 +15,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class UnigramIndexer {
 
     public static class TokenizerMapper extends Mapper<Object, Text, Text, Text> {
-        private Text word = new Text();
+        private Text unigram = new Text();
         private Text doc_id = new Text();
 
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
@@ -27,9 +27,9 @@ public class UnigramIndexer {
 
                 StringTokenizer iter = new StringTokenizer(line);
                 while (iter.hasMoreTokens()) {
-                    word.set(iter.nextToken());
+                    unigram.set(iter.nextToken());
                     doc_id.set(filename + ":1");
-                    context.write(word, doc_id);
+                    context.write(unigram, doc_id);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -39,7 +39,6 @@ public class UnigramIndexer {
 
     public static class IndexReducer extends Reducer<Text, Text, Text, Text> {
         private Text result = new Text();
-        private long reduce_rec = 0;
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             try {
@@ -49,13 +48,12 @@ public class UnigramIndexer {
                     String doc_id = parts[0];
                     int count = Integer.parseInt(parts[1]);
                     counts.put(doc_id, counts.getOrDefault(doc_id, 0) + count);
-                    reduce_rec ++;
                 }
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sbdr = new StringBuilder();
                 for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                    sb.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
+                    sbdr.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
                 }
-                result.set(sb.toString().trim());
+                result.set(sbdr.toString().trim());
                 context.write(key, result);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -77,7 +75,7 @@ public class UnigramIndexer {
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
         boolean result = job.waitForCompletion(true);
-        System.out.println("Unigram Indexer job completed. Status: " + result);
+        System.out.println("Unigram Indexer status: " + result);
 
         System.exit(result ? 0 : 1);
     }
