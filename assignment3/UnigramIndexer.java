@@ -61,11 +61,6 @@ public class UnigramIndexer {
                 e.printStackTrace();
             }
         }
-
-        @Override
-        protected void cleanup(Context context) throws IOException, InterruptedException {
-            System.out.println("Reducer has processed records: " + reduce_rec);
-        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -76,7 +71,7 @@ public class UnigramIndexer {
         job.setReducerClass(IndexReducer.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-        job.setNumReduceTasks(5);  // Adjust this based on your data size
+        job.setNumReduceTasks(5);
 
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
