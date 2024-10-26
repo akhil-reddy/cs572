@@ -24,12 +24,18 @@ public class BigramIndexer {
                 FileSplit file_split = (FileSplit) context.getInputSplit();
                 String filename = file_split.getPath().getName();
                 String line = value.toString().toLowerCase();
+
+                // Remove all characters that are not letters or spaces (this includes ',.)
                 line = line.replaceAll("[^a-zA-Z\\s]", " ");
 
+                // Split the line on space to get literals / words
                 String[] words = line.split("\\s+");
 
                 for (int i = 0; i < words.length - 1; i++) {
+                    // Couple consecutive words and add it to the "map"
                     String bigram_str = words[i] + " " + words[i + 1];
+
+                    // If the bigram is matched, process it
                     if (target.contains(bigram_str)) {
                         bigram.set(bigram_str);
                         doc_id.set(filename + ":1");
@@ -47,6 +53,8 @@ public class BigramIndexer {
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             Map<String, Integer> counts = new HashMap<>();
+
+            // Combine (via sum operation) the values in the same docs
             for (Text val : values) {
                 String[] parts = val.toString().split(":");
                 String doc_id = parts[0];
@@ -54,6 +62,7 @@ public class BigramIndexer {
                 counts.put(doc_id, counts.getOrDefault(doc_id, 0) + count);
             }
 
+            // Print the doc count of the bigram
             StringBuilder sbdr = new StringBuilder();
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
                 sbdr.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
@@ -68,6 +77,8 @@ public class BigramIndexer {
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             Map<String, Integer> counts = new HashMap<>();
+
+            // Reduce (via sum operation) the values across different docs
             for (Text val : values) {
                 String[] doc_counts = val.toString().split(" ");
                 for (String doc_count : doc_counts) {
@@ -78,6 +89,7 @@ public class BigramIndexer {
                 }
             }
 
+            // Print all doc counts next to each other
             StringBuilder sbdr = new StringBuilder();
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
                 sbdr.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");

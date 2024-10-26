@@ -23,10 +23,14 @@ public class UnigramIndexer {
                 FileSplit file_split = (FileSplit)context.getInputSplit();
                 String filename = file_split.getPath().getName();
                 String line = value.toString().toLowerCase();
+
+                // Remove all characters that are not letters or spaces (this includes ',.)
                 line = line.replaceAll("[^a-zA-Z\\s]", " ");
 
+                // Split the line on space (by default) to get literals / words
                 StringTokenizer iter = new StringTokenizer(line);
                 while (iter.hasMoreTokens()) {
+                    // Process the unigram
                     unigram.set(iter.nextToken());
                     doc_id.set(filename + ":1");
                     context.write(unigram, doc_id);
@@ -43,12 +47,16 @@ public class UnigramIndexer {
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             try {
                 Map<String, Integer> counts = new HashMap<>();
+
+                // Reduce (via sum operation) the values in the same docs
                 for (Text val : values) {
                     String[] parts = val.toString().split(":");
                     String doc_id = parts[0];
                     int count = Integer.parseInt(parts[1]);
                     counts.put(doc_id, counts.getOrDefault(doc_id, 0) + count);
                 }
+
+                // Print all doc count of the unigram
                 StringBuilder sbdr = new StringBuilder();
                 for (Map.Entry<String, Integer> entry : counts.entrySet()) {
                     sbdr.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
