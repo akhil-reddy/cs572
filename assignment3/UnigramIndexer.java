@@ -9,7 +9,6 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class UnigramIndexer {
@@ -20,9 +19,12 @@ public class UnigramIndexer {
 
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             try {
-                FileSplit file_split = (FileSplit)context.getInputSplit();
-                String filename = file_split.getPath().getName();
-                String line = value.toString().toLowerCase();
+                // Handle \t separation to fetch file name and contents
+                String[] parts = value.toString().split("\t", 2);
+                if (parts.length != 2) return;
+
+                String filename = parts[0];
+                String line = parts[1].toLowerCase();
 
                 // Remove all characters that are not letters or spaces (this includes ',.)
                 line = line.replaceAll("[^a-zA-Z\\s]", " ");
