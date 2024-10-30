@@ -55,7 +55,10 @@ public class BigramIndexer {
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             Map<String, Integer> counts = new HashMap<>();
-
+            /*
+                I'm using a combiner to combine values from the same documents. However, as per the hw, this step is
+                optional and I could've used the reducer directly for the counts.
+            */
             // Combine (via sum operation) the values in the same docs
             for (Text val : values) {
                 String[] parts = val.toString().split(":");
